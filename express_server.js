@@ -28,9 +28,26 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send(generateRandomString(6));         // Respond with 'Ok' (we will replace this)
+  // console.log(req.body);  // Log the POST request body to the console
+  let code = generateRandomString(6)
+  res.redirect(`http://localhost:8080/urls/${code}`);         // Respond with 'Ok' (we will replace this)
+  urlDatabase[code] = req.body.longURL;
+  console.log(urlDatabase);
+
+  app.get("/u/:shortURL", (req, res) => {
+    // const longURL = ...
+    longURL = urlDatabase[code]
+    console.log(longURL);
+    res.redirect(longURL);
+  });
+
 });
+
+// app.get("/u/:shortURL", (req, res) => {
+//   // const longURL = ...
+//   longURL = `http://localhost:8080/urls/${shortURL}`
+//   res.redirect(longURL);
+// });
 
 
 app.get("/", (req, res) => {
