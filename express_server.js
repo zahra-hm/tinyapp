@@ -34,13 +34,13 @@ app.post("/urls", (req, res) => {
   urlDatabase[code] = req.body.longURL;
   console.log(urlDatabase);
 
-  app.get("/u/:shortURL", (req, res) => {
-    // const longURL = ...
-    longURL = urlDatabase[code]
-    console.log(longURL);
-    res.redirect(longURL);
-  });
+});
 
+app.get("/u/:shortURL", (req, res) => {
+  // const longURL = ...
+  longURL = urlDatabase[req.params.shortURL]
+  console.log(longURL);
+  res.redirect(longURL);
 });
 
 // app.get("/u/:shortURL", (req, res) => {
