@@ -7,13 +7,32 @@ app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
+const cookieParser = require('cookie-parser')
+app.use(cookieParser())
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.youtube.com"
 };
 
+const generateId = () => Math.floor(Math.random()*1000);
+const userDatabase = [
+  {
+    id: 001,
+    nickname: 'Jlo',
+    fullname: "Jennifer"
+  },
+  {
+    id: 002,
+    nickname: 'Bob',
+    fullname: "Billy Joel"
+
+  }
+]
+
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { urls: urlDatabase, username: req.cookies['username'] };
+  // console.log(req.cookies['username']);
   res.render("urls_index", templateVars);
 });
 
@@ -35,6 +54,22 @@ app.post("/urls", (req, res) => {
   console.log(urlDatabase);
 
 });
+
+app.get("/urls/login", (req, res) => {
+  res.render("urls_index");
+});
+
+app.post("/urls/login", (req, res) => {
+  const user = req.body.username;
+  res.cookie('username', user);
+  res.redirect('/urls');
+})
+
+app.post("/urls/logout", (req, res) => {
+  res.clearCookie('username', req.body.username);
+  // res.render("urls_index");
+  res.redirect('/urls');
+})
 
 app.get("/u/:shortURL", (req, res) => {
   // const longURL = ...
