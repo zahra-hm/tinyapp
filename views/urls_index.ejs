@@ -23,11 +23,12 @@
           <th scope="col">Delete</th>
         </tr>
       </thead>
+      <% if (username) { %>
       <tbody>
         <% for(let url in urls) { %>
           <tr>
             <td><%= url %></td>
-            <td><%= urls[url] %></td>
+            <td><%= urls[url].longURL %></td>
             <td>
               <form method="GET" action="/urls/<%= url %>/">
                 <button type="edit" class="btn btn-primary">Edit</button>
@@ -44,6 +45,11 @@
           <a href = "http://localhost:8080/urls/new" >Link for shortening new URL</a>
         </h4>
       </tbody>
+        <% } else { %>
+          <div class="alert alert-danger" role="alert">
+            Log in or Register to see URL's!
+          </div>
+      <% } %>
     </table>
   </main>
   <!-- Bootstrap JS -->
