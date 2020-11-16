@@ -62,7 +62,7 @@ const users = {
   }
 }
 
-const urlsForUser = function (id, db) {
+const urlsForUser = function (id) {
   let specificURLs = {};
 
   for (let shortUrl in urlDatabase) {
@@ -76,14 +76,18 @@ const urlsForUser = function (id, db) {
 }
 
 app.get("/urls", (req, res) => {
-  const templateVars = { username: req.cookies['user_ID'], urls: urlsForUser(req.cookies['user_ID'], urlDatabase), userEmail: users};
+  const userID = req.cookies['user_ID'];
+  const user = users[userID]
+  const templateVars = { username: userID, urls: urlsForUser(userID, urlDatabase), user };
   // urlsForUser(req.cookies['user_ID'], database);
   console.log(req.cookies);
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies['user_ID'], userEmail: users[req.cookies['user_ID']].email};
+  const userID = req.cookies['user_ID'];
+  const user = users[userID];
+  const templateVars = { username: req.cookies['user_ID'], user};
   if (req.cookies['user_ID']) {
     res.render("urls_new", templateVars);
   } else {
@@ -92,12 +96,14 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let userUrls = urlsForUser(req.cookies.user_ID);
+  const userID = req.cookies['user_ID'];
+  const user = users[userID]
+  let userUrls = urlsForUser(req.cookies['user_ID']);
   let shortUrl = req.params.shortURL;
   console.log("UserUrls: ", userUrls);
   const long = userUrls[shortUrl].longURL;
   // console.log("LONG: ", long);
-  const templateVars = { shortURL: shortUrl , longURL: long, username: req.cookies['user_ID'], userEmail: users[req.cookies['user_ID']].email};
+  const templateVars = { shortURL: shortUrl , longURL: long, username: req.cookies['user_ID'], user};
   res.render("urls_show", templateVars);
 });
 
@@ -126,7 +132,9 @@ app.post("/urls/login", (req, res) => {
 
 //LOGIN PAGE
 app.get("/login", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies['user_ID']};
+  const userID = req.cookies['user_ID'];
+  const user = users[userID];
+  const templateVars = { urls: urlDatabase, username: req.cookies['user_ID'], user};
   res.render("urls_login", templateVars);
 });
 
@@ -151,6 +159,8 @@ app.post("/urls/logout", (req, res) => {
 
 //REGISTER
 app.get('/register', (req, res) => {
+  const userID = req.cookies['user_ID'];
+  const user = users[userID];
   let usernameID = generateRandomString(6);
   users[usernameID] = {
     id: usernameID,
@@ -158,7 +168,7 @@ app.get('/register', (req, res) => {
     password: req.body.password
   }
 
-  const templateVars = { urls: urlDatabase, username: req.cookies['user_ID']};
+  const templateVars = { urls: urlDatabase, username: req.cookies['user_ID'], user};
   res.render('urls_register', templateVars);
 })
 
@@ -167,17 +177,18 @@ app.post("/register", (req, res) => {
   if (checkEmail(users, req.body.email)) {
     res.status(400).send('Error 400 Bad Request: Account already exists')
   }
+  // Error 400 if there's no password
+  if ((!req.body.password) || (!req.body.email) ) {
+    res.status(400);
+    res.send('Error 400 Bad Request')
+  }
   
   users[usernameID] = {
     id: usernameID,
     email: req.body.email,
     password: req.body.password
   }
-  // Error 400 if there's no password
-  if ((!req.body.password) || (!req.body.email) ) {
-    res.status(400);
-    res.send('Error 400 Bad Request')
-  }
+  
   console.log(users);
   res.cookie('user_ID', usernameID)
 
@@ -195,17 +206,20 @@ app.get("/u/:shortURL", (req, res) => {
 
 //DELETE URL
 app.post('/urls/:shortURL/delete', (req,res) => {
+  
   let userUrls = urlsForUser(req.cookies.user_ID);
+  console.log(`UserUrls: ${userUrls}`);
   let shortUrl = req.params.shortURL;
   // const long = userUrls[shortUrl].longURL;
 
-  if (req.cookies.user_ID == userUrls[shortUrl]) {
-    delete shortUrl; 
+  if (req.cookies.user_ID == userUrls[shortUrl].userID) {
+    delete urlDatabase[shortUrl]; 
   } 
+  res.redirect('/urls');
 });
 
 app.post('/urls/:shortURL', (req,res) => {
-  urlDatabase[req.params.shortURL] = req.body.longURL; 
+  urlDatabase[req.params.shortURL].longURL = req.body.longURL; 
   res.redirect(`/urls/${req.params.shortURL}`);
 })
 
@@ -240,4 +254,3 @@ app.get("/urls.json", (req, res) => {
 // app.get("/fetch", (req, res) => {
 //   res.send(`a = ${a}`);
 // });
-
