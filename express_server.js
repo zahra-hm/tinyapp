@@ -3,10 +3,19 @@ const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080; // default port 8080
+const cookieSession = require('cookie-session');
 app.set("view engine", "ejs");
 app.use(cookieParser());
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
+// app.use(cookieSession());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2'],
+
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}))
 
 const urlDatabase = {
   b6UTxQ: { longURL: 'https://www.tsn.ca', userID: 'userRandomID' },
@@ -76,19 +85,21 @@ const urlsForUser = function (id) {
 }
 
 app.get("/urls", (req, res) => {
-  const userID = req.cookies['user_ID'];
+
+  const userID = req.session.user_ID;
+  console.log(userID);
   const user = users[userID]
   const templateVars = { username: userID, urls: urlsForUser(userID, urlDatabase), user };
   // urlsForUser(req.cookies['user_ID'], database);
-  console.log(req.cookies);
+  // console.log(req.session);
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const userID = req.cookies['user_ID'];
+  const userID = req.session.user_ID;
   const user = users[userID];
-  const templateVars = { username: req.cookies['user_ID'], user};
-  if (req.cookies['user_ID']) {
+  const templateVars = { username: req.session.user_ID, user};
+  if (req.session.user_ID) {
     res.render("urls_new", templateVars);
   } else {
     res.redirect('/login');
@@ -96,14 +107,14 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const userID = req.cookies['user_ID'];
+  const userID = req.session.user_ID;
   const user = users[userID]
-  let userUrls = urlsForUser(req.cookies['user_ID']);
+  let userUrls = urlsForUser(req.session.user_ID);
   let shortUrl = req.params.shortURL;
   console.log("UserUrls: ", userUrls);
   const long = userUrls[shortUrl].longURL;
   // console.log("LONG: ", long);
-  const templateVars = { shortURL: shortUrl , longURL: long, username: req.cookies['user_ID'], user};
+  const templateVars = { shortURL: shortUrl , longURL: long, username: req.session.user_ID, user};
   res.render("urls_show", templateVars);
 });
 
@@ -111,13 +122,13 @@ app.post("/urls", (req, res) => {
   // console.log(req.body);  // Log the POST request body to the console
   // const templateVars = { urls: urlDatabase, username: req.cookies['username'] };
   let code = generateRandomString(6)
-  urlDatabase[code] = {longURL: req.body.longURL, userID: req.cookies['user_ID']};
+  urlDatabase[code] = {longURL: req.body.longURL, userID: req.session.user_ID};
 
   // console.log("XX: ", urlDatabase);
   res.redirect(`/urls/${code}`);
 });
 
-// LOGIN - in header
+// LOGIN - in header (no longer needed)
 app.get("/urls/login", (req, res) => {
   const templateVars = { urls: urlDatabase, username: users[usernameID] };
   res.render("urls_index", templateVars);
@@ -132,16 +143,16 @@ app.post("/urls/login", (req, res) => {
 
 //LOGIN PAGE
 app.get("/login", (req, res) => {
-  const userID = req.cookies['user_ID'];
+  const userID = req.session.user_ID;
   const user = users[userID];
-  const templateVars = { urls: urlDatabase, username: req.cookies['user_ID'], user};
+  const templateVars = { urls: urlDatabase, username: req.session.user_ID, user};
   res.render("urls_login", templateVars);
 });
 
 app.post("/login", (req, res) => {
   let email = req.body.email;
   if (checkEmail(users, req.body.email) && (checkPassword(users, req.body.password))) {
-    res.cookie('user_ID', lookUpByEmail(email, users))
+    req.session.user_ID = lookUpByEmail(email, users)
     // console.log(req.body);
   } else {
     res.status(404).send('Error 404: Wrong Username/Password')
@@ -153,13 +164,14 @@ app.post("/login", (req, res) => {
 
 //LOGOUT
 app.post("/urls/logout", (req, res) => {
-  res.clearCookie('user_ID', req.body.id);
+  // res.clearCookie('user_ID', req.body.id);
+  req.session = null;
   res.redirect('/urls');
 })
 
 //REGISTER
 app.get('/register', (req, res) => {
-  const userID = req.cookies['user_ID'];
+  const userID = req.session.user_ID;
   const user = users[userID];
   let usernameID = generateRandomString(6);
   users[usernameID] = {
@@ -168,7 +180,7 @@ app.get('/register', (req, res) => {
     password: req.body.password
   }
 
-  const templateVars = { urls: urlDatabase, username: req.cookies['user_ID'], user};
+  const templateVars = { urls: urlDatabase, username: req.session.user_ID, user};
   res.render('urls_register', templateVars);
 })
 
@@ -190,9 +202,10 @@ app.post("/register", (req, res) => {
   }
   
   console.log(users);
-  res.cookie('user_ID', usernameID)
+  // res.cookie('user_ID', usernameID)
+  req.session.user_ID = usernameID;
 
-  const templateVars = { urls: urlDatabase, username: req.cookies['user_ID']};
+  const templateVars = { urls: urlDatabase, username: req.session.user_ID};
   // res.render('urls_index', templateVars);
   res.redirect('/urls');
 })
@@ -206,15 +219,24 @@ app.get("/u/:shortURL", (req, res) => {
 
 //DELETE URL
 app.post('/urls/:shortURL/delete', (req,res) => {
-  
-  let userUrls = urlsForUser(req.cookies.user_ID);
+  const userID = req.session.user_ID;
+  let userUrls = urlsForUser(req.session.user_ID);
   console.log(`UserUrls: ${userUrls}`);
   let shortUrl = req.params.shortURL;
+  console.log(`shortUrl: ${shortUrl}`);
   // const long = userUrls[shortUrl].longURL;
 
-  if (req.cookies.user_ID == userUrls[shortUrl].userID) {
-    delete urlDatabase[shortUrl]; 
+  // users[usernameID] = {
+  //   id: usernameID,
+  //   email: req.body.email,
+  //   password: req.body.password
+  // }
+  console.log(`first: ${req.session.user_ID}`);
+  console.log(`second: ${userUrls[shortUrl].userID}`);
+  if (req.session.user_ID == userUrls[shortUrl].userID) {
+    delete userUrls[shortUrl].userID; 
   } 
+  // delete urlDatbase[shortUrl];
   res.redirect('/urls');
 });
 
