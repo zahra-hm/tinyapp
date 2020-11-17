@@ -8,7 +8,6 @@ app.set("view engine", "ejs");
 app.use(cookieParser());
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
-// app.use(cookieSession());
 app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2'],
@@ -16,6 +15,8 @@ app.use(cookieSession({
   // Cookie Options
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }))
+
+const { lookUpByEmail } = require('./helpers');
 
 const urlDatabase = {
   b6UTxQ: { longURL: 'https://www.tsn.ca', userID: 'userRandomID' },
@@ -48,14 +49,6 @@ const checkPassword = function(database, password) {
     }
   }
   return false;
-}
-
-const lookUpByEmail = function (userEmail, database) {
-  for (const id in database) {
-    if (database[id].email === userEmail) {
-      return database[id].id;
-    }
-  }
 }
 
 const users = { 
@@ -226,13 +219,9 @@ app.post('/urls/:shortURL/delete', (req,res) => {
   console.log(`shortUrl: ${shortUrl}`);
   // const long = userUrls[shortUrl].longURL;
 
-  // users[usernameID] = {
-  //   id: usernameID,
-  //   email: req.body.email,
-  //   password: req.body.password
-  // }
-  console.log(`first: ${req.session.user_ID}`);
-  console.log(`second: ${userUrls[shortUrl].userID}`);
+
+  // console.log(`first: ${req.session.user_ID}`);
+  // console.log(`second: ${userUrls[shortUrl].userID}`);
   if (req.session.user_ID == userUrls[shortUrl].userID) {
     delete userUrls[shortUrl].userID; 
   } 
