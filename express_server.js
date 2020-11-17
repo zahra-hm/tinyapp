@@ -83,8 +83,6 @@ app.get("/urls", (req, res) => {
   console.log(userID);
   const user = users[userID]
   const templateVars = { username: userID, urls: urlsForUser(userID, urlDatabase), user };
-  // urlsForUser(req.cookies['user_ID'], database);
-  // console.log(req.session);
   res.render("urls_index", templateVars);
 });
 
@@ -106,14 +104,11 @@ app.get("/urls/:shortURL", (req, res) => {
   let shortUrl = req.params.shortURL;
   console.log("UserUrls: ", userUrls);
   const long = userUrls[shortUrl].longURL;
-  // console.log("LONG: ", long);
   const templateVars = { shortURL: shortUrl , longURL: long, username: req.session.user_ID, user};
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls", (req, res) => {
-  // console.log(req.body);  // Log the POST request body to the console
-  // const templateVars = { urls: urlDatabase, username: req.cookies['username'] };
   let code = generateRandomString(6)
   urlDatabase[code] = {longURL: req.body.longURL, userID: req.session.user_ID};
 
@@ -146,18 +141,15 @@ app.post("/login", (req, res) => {
   let email = req.body.email;
   if (checkEmail(users, req.body.email) && (checkPassword(users, req.body.password))) {
     req.session.user_ID = lookUpByEmail(email, users)
-    // console.log(req.body);
+
   } else {
     res.status(404).send('Error 404: Wrong Username/Password')
   }
-  // console.log(users);
-  // const templateVars = { urls: urlDatabase, username: req.cookies['user_ID'] };
   res.redirect('/urls');
 })
 
 //LOGOUT
 app.post("/urls/logout", (req, res) => {
-  // res.clearCookie('user_ID', req.body.id);
   req.session = null;
   res.redirect('/urls');
 })
@@ -205,7 +197,7 @@ app.post("/register", (req, res) => {
 
 //OPEN SHORT URL
 app.get("/u/:shortURL", (req, res) => {
-  longURL = urlDatabase[req.params.shortURL].longURL; // NEED TO CHANGE
+  longURL = urlDatabase[req.params.shortURL].longURL;
   console.log(longURL);
   res.redirect(longURL);
 });
@@ -217,15 +209,11 @@ app.post('/urls/:shortURL/delete', (req,res) => {
   console.log(`UserUrls: ${userUrls}`);
   let shortUrl = req.params.shortURL;
   console.log(`shortUrl: ${shortUrl}`);
-  // const long = userUrls[shortUrl].longURL;
 
-
-  // console.log(`first: ${req.session.user_ID}`);
-  // console.log(`second: ${userUrls[shortUrl].userID}`);
   if (req.session.user_ID == userUrls[shortUrl].userID) {
     delete userUrls[shortUrl].userID; 
   } 
-  // delete urlDatbase[shortUrl];
+
   res.redirect('/urls');
 });
 
@@ -238,30 +226,8 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
-// app.get("/u/:shortURL", (req, res) => {
-//   // const longURL = ...
-//   longURL = `http://localhost:8080/urls/${shortURL}`
-//   res.redirect(longURL);
-// });
-
-
-// app.get("/", (req, res) => {
-//   res.send("Hello!");
-// });
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html>\n");
-// });
-
-// app.get("/set", (req, res) => {
-//   const a = 1;
-//   res.send(`a = ${a}`);
-// });
-
-// app.get("/fetch", (req, res) => {
-//   res.send(`a = ${a}`);
-// });
