@@ -68,7 +68,7 @@ const urlsForUser = function (id) {
   let specificURLs = {};
 
   for (let shortUrl in urlDatabase) {
-    if (urlDatabase[shortUrl]['userID'] == id) {
+    if (urlDatabase[shortUrl]['userID'] === id) {
       specificURLs[shortUrl] = urlDatabase[shortUrl];
     }
   }
@@ -103,9 +103,19 @@ app.get("/urls/:shortURL", (req, res) => {
   let userUrls = urlsForUser(req.session.user_ID);
   let shortUrl = req.params.shortURL;
   console.log("UserUrls: ", userUrls);
-  const long = userUrls[shortUrl].longURL;
-  const templateVars = { shortURL: shortUrl , longURL: long, username: req.session.user_ID, user};
-  res.render("urls_show", templateVars);
+  
+  if (!userUrls[shortUrl]) {
+    res.send(`Login with correct user!`);
+  };
+
+  if (req.session.user_ID == userUrls[shortUrl].userID) {
+    const long = userUrls[shortUrl].longURL;
+    const templateVars = { shortURL: shortUrl , longURL: long, username: req.session.user_ID, user};
+    res.render("urls_show", templateVars);
+  } else {
+    throw new Error(`Not authorized to edit this URL!`)
+  }
+  
 });
 
 app.post("/urls", (req, res) => {
@@ -207,8 +217,14 @@ app.post('/urls/:shortURL/delete', (req,res) => {
   const userID = req.session.user_ID;
   let userUrls = urlsForUser(req.session.user_ID);
   console.log(`UserUrls: ${userUrls}`);
+  console.log(userUrls);
   let shortUrl = req.params.shortURL;
   console.log(`shortUrl: ${shortUrl}`);
+
+
+  if (!userUrls[shortUrl]) {
+    throw new Error(`${shortUrl} does not exist for this user!`)
+  };
 
   if (req.session.user_ID == userUrls[shortUrl].userID) {
     delete userUrls[shortUrl].userID; 

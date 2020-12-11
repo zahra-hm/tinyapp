@@ -20,18 +20,17 @@
     <div class="card-footer text-muted"></div>
   </div>
   <div class="card text-center">
-    <div class=card-title">Edit</div>
-    <form class="form-inline" action="/urls/<%= shortURL %>" method="POST">
+    <div class=card-header">Edit</div>
+    <div class="card-body" style="max-width: 350px;">
+    <form class="form-inline"action="/urls/<%= shortURL %>" method="POST">
       <div class="form-group mb-2">
-        <div class="container">
-          <div class="center">
             <label for="longURL">New URL:</label>
             <input class="form-control" type="text" name="longURL" placeholder="http://" style="width: 300px; margin: 1em">
             <button type="edit" class="btn btn-success">Edit</button>
-          </div>
-      </div>
       </div>
     </form>
+  </div>
+  <div class="card-footer"></div>
   </div>
   <% } else { %>
     <div class="alert alert-danger" role="alert">
